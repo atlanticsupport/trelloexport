@@ -176,10 +176,6 @@ function renderTable() {
             var td = document.createElement('td');
             var content = row[h] || '';
             // Truncate long text for preview
-            if (content.length > 50) {
-                td.title = content; // Tooltip
-                content = content.substring(0, 50) + '...';
-            }
             td.textContent = content;
             tr.appendChild(td);
         });

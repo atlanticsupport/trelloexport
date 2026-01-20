@@ -19,7 +19,8 @@ Este é um Power-Up simples para o Trello que permite exportar dados de quadros 
    - Vá para [Trello Power-Ups Admin](https://trello.com/power-ups/admin).
    - Clique em "New Power-Up".
    - Preencha o nome (ex: "Exportador da Empresa").
-   - Em **Iframe Connector URL**, coloque a URL onde está o ficheiro `index.html` (ex: `https://seu-site.com/index.html`).
+   - Em **Iframe Connector URL**, coloque a URL onde está o ficheiro `index.html`.
+   - **IMPORTANTE**: Na aba **Capabilities** (Capacidades), marque a opção **Board Buttons**. Se não marcar isso, o botão não aparece.
    - Salve.
 
 3. **Ativar no Quadro**:
