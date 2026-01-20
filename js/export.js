@@ -283,184 +283,104 @@ window.resetView = function () {
 window.generatePrintView = function () {
     if (exportData.length === 0) return;
 
-    // 1. Generate HTML Content FIRST
-    var html = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>Trello Export - Impressão</title>
-        <meta charset="utf-8">
-        <style>
-            @import url('https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;600;700&display=swap');
-            
-            body {
-                font-family: 'Segoe UI', sans-serif;
-                background: #fff;
-                color: #172b4d;
-                padding: 40px;
-                max-width: 210mm; /* A4 width */
-                margin: 0 auto;
-            }
-            
-            .card {
-                border: 1px solid #dfe1e6;
-                border-radius: 8px;
-                padding: 20px;
-                margin-bottom: 25px;
-                page-break-inside: avoid; /* Avoid cutting cards in half when printing */
-                box-shadow: 0 1px 2px rgba(9, 30, 66, 0.25);
-            }
-            
-            .card-header {
-                display: flex;
-                justify-content: space-between;
-                border-bottom: 1px solid #dfe1e6;
-                padding-bottom: 10px;
-                margin-bottom: 15px;
-                align-items: center;
-            }
+    var printView = document.getElementById('print-view');
+    var previewSection = document.getElementById('preview-section');
+    var header = document.querySelector('header');
 
-            h2 {
-                margin: 0;
-                font-size: 18px;
-                color: #172b4d;
-            }
+    // Hide other sections
+    previewSection.classList.add('hidden');
+    if (header) header.classList.add('hidden');
+    printView.classList.remove('hidden');
 
-            .list-badge {
-                background: #f4f5f7;
-                padding: 4px 8px;
-                border-radius: 4px;
-                font-size: 12px;
-                text-transform: uppercase;
-                font-weight: 700;
-                color: #5e6c84;
-            }
+    var contentHtml = '';
 
-            .labels {
-                margin-bottom: 10px;
-            }
-
-            .label {
-                display: inline-block;
-                padding: 4px 8px;
-                border-radius: 4px;
-                margin-right: 5px;
-                font-size: 11px;
-                font-weight: 700;
-                color: white;
-                background-color: #0079bf; /* Default fallback */
-            }
-
-            .meta-info {
-                font-size: 12px;
-                color: #5e6c84;
-                margin-bottom: 15px;
-                display: flex;
-                gap: 15px;
-            }
-
-            .description {
-                font-size: 14px;
-                line-height: 1.6;
-                color: #172b4d;
-            }
-            
-            /* Markdown Styles via marked.js output */
-            .description h1, .description h2, .description h3 { margin-top: 10px; margin-bottom: 5px; }
-            .description p { margin-bottom: 10px; }
-            .description ul, .description ol { padding-left: 20px; }
-            .description code { background: #f4f5f7; padding: 2px 4px; border-radius: 3px; font-family: monospace; }
-            .description blockquote { border-left: 3px solid #dfe1e6; padding-left: 10px; color: #5e6c84; margin-left: 0; }
-            .description img { max-width: 100%; height: auto; }
-
-            @media print {
-                body { padding: 0; }
-                .no-print { display: none; }
-                @page { margin: 20mm; }
-            }
-        </style>
-    </head>
-    <body>
-        <div class="no-print" style="margin-bottom: 20px; text-align: right; position: sticky; top: 10px;">
-            <button onclick="window.print()" style="padding: 10px 20px; background: #0079bf; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">🖨️ Imprimir agora</button>
-        </div>
-        <h1>Relatório de Exportação</h1>
-        <p style="color: #666; margin-bottom: 30px;">Gerado em ${new Date().toLocaleString()}</p>
+    // Add Back Button and Print Button
+    contentHtml += `
+    <div class="no-print" style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: var(--bg-color); padding: 10px 0; border-bottom: 1px solid var(--border); z-index: 100;">
+        <button onclick="closePrintView()" class="btn btn-secondary" style="margin-left: 0;">← Voltar</button>
+        <button onclick="window.print()" class="btn btn-primary">🖨️ Imprimir</button>
+    </div>
+    <div class="print-content">
+        <h1 style="color: var(--text-primary); margin-bottom: 5px;">Relatório de Exportação</h1>
+        <p style="color: var(--text-secondary); margin-bottom: 30px;">Gerado em ${new Date().toLocaleString()}</p>
     `;
 
     exportData.forEach(function (row) {
-        html += `<div class="card">`;
+        contentHtml += `<div class="card" style="page-break-inside: avoid; border: 1px solid var(--border); padding: 20px; margin-bottom: 20px; border-radius: 8px; background: var(--card-bg);">`;
 
-        // Header with Name and List
-        html += `<div class="card-header">
-                    <h2>${row['Nome'] || 'Sem Nome'}</h2>
-                    ${row['Lista'] ? `<span class="list-badge">${row['Lista']}</span>` : ''}
+        // Header
+        contentHtml += `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
+                    <h2 style="margin: 0; font-size: 18px; color: var(--text-primary);">${row['Nome'] || 'Sem Nome'}</h2>
+                    ${row['Lista'] ? `<span style="background: rgba(255,255,255,0.1); padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; color: var(--text-secondary);">${row['Lista']}</span>` : ''}
                  </div>`;
 
         // Labels
         if (row['Etiquetas']) {
-            html += `<div class="labels">`;
-            // Split labels (assumes they are comma separated string currently)
+            contentHtml += `<div style="margin-bottom: 10px;">`;
             var labels = row['Etiquetas'].split(', ');
             labels.forEach(l => {
-                if (l) html += `<span class="label">${l}</span>`;
+                if (l) contentHtml += `<span style="display: inline-block; padding: 4px 8px; border-radius: 4px; margin-right: 5px; font-size: 11px; font-weight: bold; color: white; background-color: var(--accent);">${l}</span>`;
             });
-            html += `</div>`;
+            contentHtml += `</div>`;
         }
 
         // Meta Info
-        html += `<div class="meta-info">`;
-        if (row['Membros']) html += `<span>👤 ${row['Membros']}</span>`;
-        if (row['Entrega']) html += `<span>📅 ${row['Entrega']}</span>`;
-        if (row['URL']) html += `<span>🔗 <a href="${row['URL']}" target="_blank">Link Trello</a></span>`;
-        html += `</div>`;
+        contentHtml += `<div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 15px; display: flex; gap: 15px;">`;
+        if (row['Membros']) contentHtml += `<span>👤 ${row['Membros']}</span>`;
+        if (row['Entrega']) contentHtml += `<span>📅 ${row['Entrega']}</span>`;
+        if (row['URL']) contentHtml += `<span>🔗 <a href="${row['URL']}" target="_blank" style="color: var(--accent);">Link</a></span>`;
+        contentHtml += `</div>`;
 
-        // Description with Markdown parsing
+        // Description
         if (row['Descrição']) {
             var descHtml = typeof marked !== 'undefined' ? marked.parse(row['Descrição']) : row['Descrição'];
-            html += `<div class="description">${descHtml}</div>`;
+            // Simplify markdown styles for dark/light mode compatibility
+            contentHtml += `<div class="description" style="font-size: 14px; line-height: 1.6; color: var(--text-primary); border-top: 1px solid var(--border); padding-top: 10px;">${descHtml}</div>`;
         } else {
-            html += `<div class="description" style="font-style: italic; color: #999;">Sem descrição.</div>`;
+            contentHtml += `<div class="description" style="font-style: italic; color: var(--text-secondary); border-top: 1px solid var(--border); padding-top: 10px;">Sem descrição.</div>`;
         }
 
-        html += `</div>`; // Close card
+        contentHtml += `</div>`; // Close card
     });
 
-    html += `</body></html>`;
+    contentHtml += `</div>`; // Close print-content
 
-    // 2. Create Blob URL
-    var blob = new Blob([html], { type: 'text/html' });
-    var url = URL.createObjectURL(blob);
-
-    // 3. Try to open
-    var printWindow = window.open(url, '_blank');
-
-    // 4. Handle Blocked Popup
-    if (!printWindow) {
-        // Show fallback button
-        var btnContainer = document.querySelector('.actions-bar > div');
-
-        // Check if link already exists
-        var existingLink = document.getElementById('print-fallback-link');
-        if (existingLink) existingLink.remove();
-
-        var link = document.createElement('a');
-        link.id = 'print-fallback-link';
-        link.href = url;
-        link.target = '_blank';
-        link.className = 'btn btn-primary';
-        link.textContent = 'Abrir Relatório';
-        link.title = "Clique aqui se a janela não abrir automaticamente";
-        link.style.backgroundColor = '#22c55e'; // Green
-        link.style.marginLeft = '10px';
-
-        /* Insert after the Print button */
-        var printBtn = btnContainer.querySelector('button'); // Assuming first button is print
-        // Basic fallback to append if selector fails, but should work
-        if (printBtn && btnContainer.contains(printBtn)) {
-            btnContainer.appendChild(link); // Append to end of container is safer visually in flex row
-        } else {
-            btnContainer.appendChild(link);
+    // Inject styles for printing
+    contentHtml += `
+    <style>
+        .print-content .description img { max-width: 100%; height: auto; }
+        .print-content .description blockquote { border-left: 3px solid var(--border); padding-left: 10px; margin-left: 0; color: var(--text-secondary); }
+        .print-content .description code { background: rgba(255,255,255,0.1); padding: 2px 4px; border-radius: 3px; font-family: monospace; }
+        
+        @media print {
+            body { background-color: white !important; color: black !important; }
+            .no-print { display: none !important; }
+            .card { border: 1px solid #ccc !important; box-shadow: none !important; background: white !important; page-break-inside: avoid; color: black !important; }
+            .description { color: black !important; }
+            h1, h2, p, span, div { color: black !important; }
+            a { color: blue !important; text-decoration: underline; }
+            .list-badge { border: 1px solid #ddd; background: #eee !important; color: #333 !important; }
+            .label { -webkit-print-color-adjust: exact; print-color-adjust: exact; border: 1px solid #ccc; }
+            @page { margin: 15mm; }
+            /* Hide general UI elements */
+            .container > header, #config-section, #preview-section { display: none !important; }
+            #print-view { display: block !important; }
         }
-    }
+    </style>
+    `;
+
+    printView.innerHTML = contentHtml;
+    // Resize to fit new content
+    t.sizeTo(document.body);
+};
+
+window.closePrintView = function () {
+    var printView = document.getElementById('print-view');
+    var previewSection = document.getElementById('preview-section');
+
+    printView.classList.add('hidden');
+    printView.innerHTML = ''; // Clear memory
+    previewSection.classList.remove('hidden');
+
+    t.sizeTo(document.body);
 };
