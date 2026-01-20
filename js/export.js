@@ -1,4 +1,4 @@
-/* global TrelloPowerUp */
+/* global TrelloPowerUp, XLSX, marked */
 
 var t = TrelloPowerUp.iframe();
 
@@ -283,13 +283,7 @@ window.resetView = function () {
 window.generatePrintView = function () {
     if (exportData.length === 0) return;
 
-    var printWindow = window.open('', '_blank');
-    if (!printWindow) {
-        alert("Por favor permita pop-ups para abrir a vista de impressão.");
-        return;
-    }
-
-    // Generate HTML Content
+    // 1. Generate HTML Content FIRST
     var html = `
     <!DOCTYPE html>
     <html>
@@ -371,7 +365,7 @@ window.generatePrintView = function () {
                 color: #172b4d;
             }
             
-            /* Markdown Styles */
+            /* Markdown Styles via marked.js output */
             .description h1, .description h2, .description h3 { margin-top: 10px; margin-bottom: 5px; }
             .description p { margin-bottom: 10px; }
             .description ul, .description ol { padding-left: 20px; }
@@ -434,6 +428,39 @@ window.generatePrintView = function () {
 
     html += `</body></html>`;
 
-    printWindow.document.write(html);
-    printWindow.document.close();
+    // 2. Create Blob URL
+    var blob = new Blob([html], { type: 'text/html' });
+    var url = URL.createObjectURL(blob);
+
+    // 3. Try to open
+    var printWindow = window.open(url, '_blank');
+
+    // 4. Handle Blocked Popup
+    if (!printWindow) {
+        // Show fallback button
+        var btnContainer = document.querySelector('.actions-bar > div');
+
+        // Check if link already exists
+        var existingLink = document.getElementById('print-fallback-link');
+        if (existingLink) existingLink.remove();
+
+        var link = document.createElement('a');
+        link.id = 'print-fallback-link';
+        link.href = url;
+        link.target = '_blank';
+        link.className = 'btn btn-primary';
+        link.textContent = 'Abrir Relatório';
+        link.title = "Clique aqui se a janela não abrir automaticamente";
+        link.style.backgroundColor = '#22c55e'; // Green
+        link.style.marginLeft = '10px';
+
+        /* Insert after the Print button */
+        var printBtn = btnContainer.querySelector('button'); // Assuming first button is print
+        // Basic fallback to append if selector fails, but should work
+        if (printBtn && btnContainer.contains(printBtn)) {
+            btnContainer.appendChild(link); // Append to end of container is safer visually in flex row
+        } else {
+            btnContainer.appendChild(link);
+        }
+    }
 };
