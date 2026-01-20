@@ -13,7 +13,38 @@ t.render(function () {
     // Setup standard view logic if needed, usually just one-time setup
     // We'll trigger data load on button click, but let's fetch lists early for the dropdown
     fetchLists();
+    loadPreferences();
 });
+
+// Load preferences from localStorage
+function loadPreferences() {
+    try {
+        var saved = localStorage.getItem('trello_export_prefs');
+        if (saved) {
+            var prefs = JSON.parse(saved);
+            var checks = document.querySelectorAll('.checkbox-group input[type="checkbox"]');
+            checks.forEach(function (cb) {
+                if (prefs.includes(cb.value)) {
+                    cb.checked = true;
+                } else {
+                    cb.checked = false;
+                }
+            });
+        }
+    } catch (e) {
+        console.warn("Could not load preferences", e);
+    }
+}
+
+// Save preferences to localStorage
+function savePreferences() {
+    try {
+        var fields = getSelectedFields();
+        localStorage.setItem('trello_export_prefs', JSON.stringify(fields));
+    } catch (e) {
+        console.warn("Could not save preferences", e);
+    }
+}
 
 // Toggle List Select Visibility
 window.toggleListSelect = function () {
@@ -56,6 +87,8 @@ function getSelectedFields() {
 
 // Main Load Function
 document.getElementById('btn-load').addEventListener('click', function () {
+    savePreferences(); // Save current selection
+
     var btn = document.getElementById('btn-load');
     var spinner = document.getElementById('spinner');
     var errorMsg = document.getElementById('error-msg');
@@ -86,6 +119,7 @@ document.getElementById('btn-load').addEventListener('click', function () {
         btn.disabled = false;
         configSection.classList.add('hidden');
         previewSection.classList.remove('hidden');
+        document.querySelector('header').classList.add('hidden'); // Hide header
         t.sizeTo(document.body); // Resize to fit content
 
     }).catch(function (err) {
@@ -175,8 +209,17 @@ function renderTable() {
         headers.forEach(function (h) {
             var td = document.createElement('td');
             var content = row[h] || '';
-            // Truncate long text for preview
-            td.textContent = content;
+
+            if (h === 'URL' && content.startsWith('http')) {
+                var link = document.createElement('a');
+                link.href = content;
+                link.target = '_blank';
+                link.textContent = 'Link';
+                link.style.color = 'var(--accent)';
+                td.appendChild(link);
+            } else {
+                td.textContent = content;
+            }
             tr.appendChild(td);
         });
         tableBody.appendChild(tr);
@@ -184,14 +227,19 @@ function renderTable() {
 }
 
 // Download Handlers
-window.downloadJSON = function () {
-    var dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData, null, 2));
-    var downloadAnchorNode = document.createElement('a');
-    downloadAnchorNode.setAttribute("href", dataStr);
-    downloadAnchorNode.setAttribute("download", "trello_export.json");
-    document.body.appendChild(downloadAnchorNode);
-    downloadAnchorNode.click();
-    downloadAnchorNode.remove();
+window.downloadXLSX = function () {
+    /* global XLSX */
+    if (exportData.length === 0) return;
+
+    // Create worksheet
+    var ws = XLSX.utils.json_to_sheet(exportData);
+
+    // Create workbook
+    var wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Trello Export");
+
+    // Export
+    XLSX.writeFile(wb, "trello_export.xlsx");
 };
 
 window.downloadCSV = function () {
@@ -222,4 +270,12 @@ window.downloadCSV = function () {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+};
+
+window.resetView = function () {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    document.getElementById('config-section').classList.remove('hidden');
+    document.getElementById('preview-section').classList.add('hidden');
+    document.querySelector('header').classList.remove('hidden');
+    t.sizeTo('#config-section');
 };

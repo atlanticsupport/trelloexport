@@ -151,10 +151,33 @@ input[type="text"]:focus {
 .table-container {
   overflow-x: auto;
   overflow-y: auto;
-  max-height: 65vh;
-  /* Allows vertical scrolling */
+  max-height: 85vh;
+  /* Increased height for better view */
   border-radius: 8px;
   border: 1px solid var(--border);
+  /* Custom Scrollbar */
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent) var(--bg-color);
+}
+
+.table-container::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.table-container::-webkit-scrollbar-track {
+  background: var(--bg-color);
+  border-radius: 8px;
+}
+
+.table-container::-webkit-scrollbar-thumb {
+  background-color: var(--border);
+  border-radius: 8px;
+  border: 2px solid var(--bg-color);
+}
+
+.table-container::-webkit-scrollbar-thumb:hover {
+  background-color: var(--accent);
 }
 
 table {

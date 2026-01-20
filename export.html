@@ -6,6 +6,7 @@
     <title>Exportar Quadro</title>
     <link rel="stylesheet" href="./css/style.css">
     <script src="https://p.trellocdn.com/power-up.min.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.mini.min.js"></script>
 </head>
 
 <body>
@@ -63,7 +64,7 @@
                 <h2>Pré-visualização (<span id="row-count">0</span>)</h2>
                 <div>
                     <button class="btn btn-secondary" onclick="downloadCSV()">Baixar CSV</button>
-                    <button class="btn btn-secondary" onclick="downloadJSON()">Baixar JSON</button>
+                    <button class="btn btn-secondary" onclick="downloadXLSX()">Baixar XLSX</button>
                 </div>
             </div>
 
@@ -80,9 +81,7 @@
                 </table>
             </div>
             <div style="margin-top: 1rem; text-align: center;">
-                <button class="btn btn-primary"
-                    onclick="window.scrollTo({top: 0, behavior: 'smooth'}); document.getElementById('config-section').classList.remove('hidden'); document.getElementById('preview-section').classList.add('hidden');">Nova
-                    Exportação</button>
+                <button class="btn btn-primary" onclick="resetView()">Nova Exportação</button>
             </div>
         </div>
     </div>
