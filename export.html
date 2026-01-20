@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Exportar Quadro</title>
+    <link rel="stylesheet" href="./css/style.css">
+    <script src="https://p.trellocdn.com/power-up.min.js"></script>
+</head>
+
+<body>
+
+    <div class="container">
+        <header>
+            <h1>Exportador de Quadros</h1>
+            <p style="color: var(--text-secondary);">Selecione o que deseja exportar e visualize os dados antes do
+                download.</p>
+        </header>
+
+        <div class="card" id="config-section">
+            <h2>1. Origem dos Dados</h2>
+            <div class="form-group">
+                <div class="checkbox-group" style="margin-bottom: 1rem;">
+                    <label class="checkbox-item">
+                        <input type="radio" name="source" value="board" checked onchange="toggleListSelect()">
+                        Quadro Inteiro
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="radio" name="source" value="list" onchange="toggleListSelect()">
+                        Lista Específica
+                    </label>
+                </div>
+
+                <div id="list-select-container" class="hidden">
+                    <label for="list-select">Selecione a Lista:</label>
+                    <select id="list-select">
+                        <option value="" disabled selected>Carregando listas...</option>
+                    </select>
+                </div>
+            </div>
+
+            <h2>2. Campos a Incluir</h2>
+            <div class="checkbox-group">
+                <label class="checkbox-item"><input type="checkbox" value="name" checked> Nome do Cartão</label>
+                <label class="checkbox-item"><input type="checkbox" value="desc" checked> Descrição</label>
+                <label class="checkbox-item"><input type="checkbox" value="list" checked> Lista (Coluna)</label>
+                <label class="checkbox-item"><input type="checkbox" value="members" checked> Membros</label>
+                <label class="checkbox-item"><input type="checkbox" value="labels" checked> Etiquetas</label>
+                <label class="checkbox-item"><input type="checkbox" value="due" checked> Data de Entrega</label>
+                <label class="checkbox-item"><input type="checkbox" value="url" checked> URL</label>
+                <label class="checkbox-item"><input type="checkbox" value="dateLastActivity"> Última Atividade</label>
+            </div>
+
+            <div style="margin-top: 2rem;">
+                <button class="btn btn-primary" id="btn-load">Carregar Dados</button>
+                <div id="spinner" class="spinner"></div>
+            </div>
+            <div id="error-msg" style="color: var(--error); margin-top: 1rem;" class="hidden"></div>
+        </div>
+
+        <div class="card hidden" id="preview-section">
+            <div class="actions-bar">
+                <h2>Pré-visualização (<span id="row-count">0</span>)</h2>
+                <div>
+                    <button class="btn btn-secondary" onclick="downloadCSV()">Baixar CSV</button>
+                    <button class="btn btn-secondary" onclick="downloadJSON()">Baixar JSON</button>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table id="preview-table">
+                    <thead>
+                        <tr id="table-header">
+                            <!-- Headers generated via JS -->
+                        </tr>
+                    </thead>
+                    <tbody id="table-body">
+                        <!-- Rows generated via JS -->
+                    </tbody>
+                </table>
+            </div>
+            <div style="margin-top: 1rem; text-align: center;">
+                <button class="btn btn-primary"
+                    onclick="window.scrollTo({top: 0, behavior: 'smooth'}); document.getElementById('config-section').classList.remove('hidden'); document.getElementById('preview-section').classList.add('hidden');">Nova
+                    Exportação</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="./js/export.js"></script>
+</body>
+
+</html>
