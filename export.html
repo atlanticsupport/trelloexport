@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="./css/style.css">
     <script src="https://p.trellocdn.com/power-up.min.js"></script>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.mini.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 
 <body>
@@ -62,9 +63,10 @@
         <div class="card hidden" id="preview-section">
             <div class="actions-bar">
                 <h2>Pré-visualização (<span id="row-count">0</span>)</h2>
-                <div>
-                    <button class="btn btn-secondary" onclick="downloadCSV()">Baixar CSV</button>
-                    <button class="btn btn-secondary" onclick="downloadXLSX()">Baixar XLSX</button>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn btn-primary" onclick="generatePrintView()">🖨️ Imprimir / Web View</button>
+                    <button class="btn btn-secondary" onclick="downloadCSV()">CSV</button>
+                    <button class="btn btn-secondary" onclick="downloadXLSX()">XLSX</button>
                 </div>
             </div>
 

@@ -279,3 +279,161 @@ window.resetView = function () {
     document.querySelector('header').classList.remove('hidden');
     t.sizeTo('#config-section');
 };
+
+window.generatePrintView = function () {
+    if (exportData.length === 0) return;
+
+    var printWindow = window.open('', '_blank');
+    if (!printWindow) {
+        alert("Por favor permita pop-ups para abrir a vista de impressão.");
+        return;
+    }
+
+    // Generate HTML Content
+    var html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Trello Export - Impressão</title>
+        <meta charset="utf-8">
+        <style>
+            @import url('https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;600;700&display=swap');
+            
+            body {
+                font-family: 'Segoe UI', sans-serif;
+                background: #fff;
+                color: #172b4d;
+                padding: 40px;
+                max-width: 210mm; /* A4 width */
+                margin: 0 auto;
+            }
+            
+            .card {
+                border: 1px solid #dfe1e6;
+                border-radius: 8px;
+                padding: 20px;
+                margin-bottom: 25px;
+                page-break-inside: avoid; /* Avoid cutting cards in half when printing */
+                box-shadow: 0 1px 2px rgba(9, 30, 66, 0.25);
+            }
+            
+            .card-header {
+                display: flex;
+                justify-content: space-between;
+                border-bottom: 1px solid #dfe1e6;
+                padding-bottom: 10px;
+                margin-bottom: 15px;
+                align-items: center;
+            }
+
+            h2 {
+                margin: 0;
+                font-size: 18px;
+                color: #172b4d;
+            }
+
+            .list-badge {
+                background: #f4f5f7;
+                padding: 4px 8px;
+                border-radius: 4px;
+                font-size: 12px;
+                text-transform: uppercase;
+                font-weight: 700;
+                color: #5e6c84;
+            }
+
+            .labels {
+                margin-bottom: 10px;
+            }
+
+            .label {
+                display: inline-block;
+                padding: 4px 8px;
+                border-radius: 4px;
+                margin-right: 5px;
+                font-size: 11px;
+                font-weight: 700;
+                color: white;
+                background-color: #0079bf; /* Default fallback */
+            }
+
+            .meta-info {
+                font-size: 12px;
+                color: #5e6c84;
+                margin-bottom: 15px;
+                display: flex;
+                gap: 15px;
+            }
+
+            .description {
+                font-size: 14px;
+                line-height: 1.6;
+                color: #172b4d;
+            }
+            
+            /* Markdown Styles */
+            .description h1, .description h2, .description h3 { margin-top: 10px; margin-bottom: 5px; }
+            .description p { margin-bottom: 10px; }
+            .description ul, .description ol { padding-left: 20px; }
+            .description code { background: #f4f5f7; padding: 2px 4px; border-radius: 3px; font-family: monospace; }
+            .description blockquote { border-left: 3px solid #dfe1e6; padding-left: 10px; color: #5e6c84; margin-left: 0; }
+            .description img { max-width: 100%; height: auto; }
+
+            @media print {
+                body { padding: 0; }
+                .no-print { display: none; }
+                @page { margin: 20mm; }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="no-print" style="margin-bottom: 20px; text-align: right; position: sticky; top: 10px;">
+            <button onclick="window.print()" style="padding: 10px 20px; background: #0079bf; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">🖨️ Imprimir agora</button>
+        </div>
+        <h1>Relatório de Exportação</h1>
+        <p style="color: #666; margin-bottom: 30px;">Gerado em ${new Date().toLocaleString()}</p>
+    `;
+
+    exportData.forEach(function (row) {
+        html += `<div class="card">`;
+
+        // Header with Name and List
+        html += `<div class="card-header">
+                    <h2>${row['Nome'] || 'Sem Nome'}</h2>
+                    ${row['Lista'] ? `<span class="list-badge">${row['Lista']}</span>` : ''}
+                 </div>`;
+
+        // Labels
+        if (row['Etiquetas']) {
+            html += `<div class="labels">`;
+            // Split labels (assumes they are comma separated string currently)
+            var labels = row['Etiquetas'].split(', ');
+            labels.forEach(l => {
+                if (l) html += `<span class="label">${l}</span>`;
+            });
+            html += `</div>`;
+        }
+
+        // Meta Info
+        html += `<div class="meta-info">`;
+        if (row['Membros']) html += `<span>👤 ${row['Membros']}</span>`;
+        if (row['Entrega']) html += `<span>📅 ${row['Entrega']}</span>`;
+        if (row['URL']) html += `<span>🔗 <a href="${row['URL']}" target="_blank">Link Trello</a></span>`;
+        html += `</div>`;
+
+        // Description with Markdown parsing
+        if (row['Descrição']) {
+            var descHtml = typeof marked !== 'undefined' ? marked.parse(row['Descrição']) : row['Descrição'];
+            html += `<div class="description">${descHtml}</div>`;
+        } else {
+            html += `<div class="description" style="font-style: italic; color: #999;">Sem descrição.</div>`;
+        }
+
+        html += `</div>`; // Close card
+    });
+
+    html += `</body></html>`;
+
+    printWindow.document.write(html);
+    printWindow.document.close();
+};
