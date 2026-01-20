@@ -148,11 +148,14 @@ input[type="text"]:focus {
 }
 
 /* Table Styles */
+/* Table Styles */
 .table-container {
   overflow-x: auto;
   overflow-y: auto;
-  max-height: 85vh;
-  /* Increased height for better view */
+  max-height: 60vh;
+  /* Reduced height to fit screen */
+  margin: 20px 0;
+  /* Equal margins */
   border-radius: 8px;
   border: 1px solid var(--border);
   /* Custom Scrollbar */
