@@ -280,6 +280,23 @@ window.resetView = function () {
     t.sizeTo('#config-section');
 };
 
+// Basic Emoji Map for common shortcodes
+function parseEmojis(text) {
+    if (!text) return text;
+    var map = {
+        ':smile:': '😄', ':smiley:': '😃', ':grin:': '😁', ':joy:': '😂', ':wink:': '😉',
+        ':thumbsup:': '👍', ':thumbsdown:': '👎', ':ok_hand:': '👌', ':clap:': '👏',
+        ':tada:': '🎉', ':rocket:': '🚀', ':bulb:': '💡', ':memo:': '📝', ':mailbox_with_mail:': '📬',
+        ':warning:': '⚠️', ':exclamation:': '❗', ':question:': '❓', ':stop_sign:': '🛑',
+        ':white_check_mark:': '✅', ':ballot_box_with_check:': '☑️', ':x:': '❌',
+        ':heart:': '❤️', ':star:': '⭐', ':fire:': '🔥', ':poop:': '💩', ':eyes:': '👀',
+        ':sunglasses:': '😎', ':cry:': '😢', ':sob:': '😭', ':thinking_face:': '🤔'
+    };
+    return text.replace(/:[a-z0-9_]+:/g, function (match) {
+        return map[match] || match;
+    });
+}
+
 window.generatePrintView = function () {
     if (exportData.length === 0) return;
 
@@ -292,85 +309,148 @@ window.generatePrintView = function () {
     if (header) header.classList.add('hidden');
     printView.classList.remove('hidden');
 
-    var contentHtml = '';
-
-    // Add Back Button and Print Button
-    contentHtml += `
-    <div class="no-print" style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: var(--bg-color); padding: 10px 0; border-bottom: 1px solid var(--border); z-index: 100;">
-        <button onclick="closePrintView()" class="btn btn-secondary" style="margin-left: 0;">← Voltar</button>
-        <button onclick="window.print()" class="btn btn-primary">🖨️ Imprimir</button>
-    </div>
-    <div class="print-content">
-        <h1 style="color: var(--text-primary); margin-bottom: 5px;">Relatório de Exportação</h1>
-        <p style="color: var(--text-secondary); margin-bottom: 30px;">Gerado em ${new Date().toLocaleString()}</p>
-    `;
-
-    exportData.forEach(function (row) {
-        contentHtml += `<div class="card" style="page-break-inside: avoid; border: 1px solid var(--border); padding: 20px; margin-bottom: 20px; border-radius: 8px; background: var(--card-bg);">`;
-
-        // Header
-        contentHtml += `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
-                    <h2 style="margin: 0; font-size: 18px; color: var(--text-primary);">${row['Nome'] || 'Sem Nome'}</h2>
-                    ${row['Lista'] ? `<span style="background: rgba(255,255,255,0.1); padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; color: var(--text-secondary);">${row['Lista']}</span>` : ''}
-                 </div>`;
-
-        // Labels
-        if (row['Etiquetas']) {
-            contentHtml += `<div style="margin-bottom: 10px;">`;
-            var labels = row['Etiquetas'].split(', ');
-            labels.forEach(l => {
-                if (l) contentHtml += `<span style="display: inline-block; padding: 4px 8px; border-radius: 4px; margin-right: 5px; font-size: 11px; font-weight: bold; color: white; background-color: var(--accent);">${l}</span>`;
-            });
-            contentHtml += `</div>`;
-        }
-
-        // Meta Info
-        contentHtml += `<div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 15px; display: flex; gap: 15px;">`;
-        if (row['Membros']) contentHtml += `<span>👤 ${row['Membros']}</span>`;
-        if (row['Entrega']) contentHtml += `<span>📅 ${row['Entrega']}</span>`;
-        if (row['URL']) contentHtml += `<span>🔗 <a href="${row['URL']}" target="_blank" style="color: var(--accent);">Link</a></span>`;
-        contentHtml += `</div>`;
-
-        // Description
-        if (row['Descrição']) {
-            var descHtml = typeof marked !== 'undefined' ? marked.parse(row['Descrição']) : row['Descrição'];
-            // Simplify markdown styles for dark/light mode compatibility
-            contentHtml += `<div class="description" style="font-size: 14px; line-height: 1.6; color: var(--text-primary); border-top: 1px solid var(--border); padding-top: 10px;">${descHtml}</div>`;
-        } else {
-            contentHtml += `<div class="description" style="font-style: italic; color: var(--text-secondary); border-top: 1px solid var(--border); padding-top: 10px;">Sem descrição.</div>`;
-        }
-
-        contentHtml += `</div>`; // Close card
-    });
-
-    contentHtml += `</div>`; // Close print-content
-
-    // Inject styles for printing
-    contentHtml += `
+    // Inject specialized CSS for this view
+    var printStyles = `
     <style>
-        .print-content .description img { max-width: 100%; height: auto; }
-        .print-content .description blockquote { border-left: 3px solid var(--border); padding-left: 10px; margin-left: 0; color: var(--text-secondary); }
-        .print-content .description code { background: rgba(255,255,255,0.1); padding: 2px 4px; border-radius: 3px; font-family: monospace; }
+        /* Force light theme for this container regardless of global CSS */
+        #print-view {
+            background-color: white !important;
+            color: black !important;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            padding: 40px;
+            max-width: 210mm; /* A4 width */
+            margin: 0 auto;
+            min-height: 100vh;
+        }
+
+        .print-controls {
+            display: flex; 
+            justify-content: space-between; 
+            margin-bottom: 40px; 
+            padding-bottom: 20px; 
+            border-bottom: 1px solid #ccc;
+        }
+
+        .doc-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: black;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .doc-meta {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 40px;
+        }
+
+        .print-card {
+            margin-bottom: 30px;
+            padding-bottom: 30px;
+            border-bottom: 2px solid #000; /* Clear thick separator */
+            page-break-inside: avoid;
+        }
+
+        .print-card h2 {
+            font-size: 18px;
+            margin: 0 0 10px 0;
+            font-weight: bold;
+            color: black;
+        }
+
+        .print-meta-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            font-size: 11px;
+            color: #333;
+            margin-bottom: 15px;
+            font-family: monospace; /* Technical look */
+            text-transform: uppercase;
+        }
+
+        .print-label {
+            border: 1px solid #000;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 10px;
+        }
+
+        .print-desc {
+            font-size: 12px;
+            line-height: 1.5;
+            color: black;
+            text-align: justify;
+        }
+
+        .print-desc img {
+            max-width: 100%;
+            filter: grayscale(100%); /* Force B&W images for clean printing */
+        }
         
+        .print-desc h1 { font-size: 16px; border-bottom: 1px solid #ccc; }
+        .print-desc h2 { font-size: 14px; font-weight: bold; }
+        .print-desc blockquote { border-left: 3px solid #000; padding-left: 10px; margin-left: 0; font-style: italic; }
+
         @media print {
-            body { background-color: white !important; color: black !important; }
-            .no-print { display: none !important; }
-            .card { border: 1px solid #ccc !important; box-shadow: none !important; background: white !important; page-break-inside: avoid; color: black !important; }
-            .description { color: black !important; }
-            h1, h2, p, span, div { color: black !important; }
-            a { color: blue !important; text-decoration: underline; }
-            .list-badge { border: 1px solid #ddd; background: #eee !important; color: #333 !important; }
-            .label { -webkit-print-color-adjust: exact; print-color-adjust: exact; border: 1px solid #ccc; }
-            @page { margin: 15mm; }
-            /* Hide general UI elements */
-            .container > header, #config-section, #preview-section { display: none !important; }
-            #print-view { display: block !important; }
+            body { background-color: white !important; margin: 0; padding: 0; }
+            .container, #config-section, #preview-section, header { display: none !important; }
+            #print-view { display: block !important; padding: 0 !important; margin: 0 !important; width: 100%; max-width: none; }
+            .print-controls { display: none !important; }
+            .print-card { page-break-inside: avoid; }
+            a { text-decoration: none; color: black !important; }
         }
     </style>
     `;
 
+    var contentHtml = printStyles + `
+    <div class="print-controls no-print">
+        <button onclick="closePrintView()" class="btn btn-secondary" style="background: #eee; color: #333; border: 1px solid #ccc;">← Voltar</button>
+        <button onclick="window.print()" class="btn btn-primary" style="background: #000; color: #fff; border: none;">🖨️ Imprimir</button>
+    </div>
+    
+    <div class="doc-title">Relatório de Exportação</div>
+    <div class="doc-meta">Gerado em ${new Date().toLocaleString()} | Total: ${exportData.length} cartões</div>
+    `;
+
+    exportData.forEach(function (row) {
+        // Parse emojis in name and description
+        var safeName = parseEmojis(row['Nome'] || 'Sem Nome');
+        var safeDesc = parseEmojis(row['Descrição'] || '');
+
+        // Render Markdown
+        var descHtml = safeDesc ? (typeof marked !== 'undefined' ? marked.parse(safeDesc) : safeDesc) : '<span style="color:#999; font-style:italic">Sem descrição</span>';
+
+        contentHtml += `
+        <div class="print-card">
+            <h2>${safeName}</h2>
+            
+            <div class="print-meta-row">
+                ${row['Lista'] ? `<span>📂 ${row['Lista']}</span>` : ''}
+                ${row['Membros'] ? `<span>👤 ${row['Membros']}</span>` : ''}
+                ${row['Entrega'] ? `<span>📅 ${row['Entrega']}</span>` : ''}
+            </div>
+
+            ${row['Etiquetas'] ? `
+            <div style="margin-bottom: 10px;">
+                ${row['Etiquetas'].split(', ').map(l => `<span class="print-label">${l}</span>`).join(' ')}
+            </div>` : ''}
+
+            <div class="print-desc">
+                ${descHtml}
+            </div>
+        </div>`;
+    });
+
     printView.innerHTML = contentHtml;
-    // Resize to fit new content
+
+    // Explicitly set light background on body to override dark mode during this view
+    document.body.style.backgroundColor = 'white';
+    document.body.style.color = 'black';
+
     t.sizeTo(document.body);
 };
 
