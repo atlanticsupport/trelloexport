@@ -280,20 +280,31 @@ window.resetView = function () {
     t.sizeTo('#config-section');
 };
 
+// Configure Marked.js options
+if (typeof marked !== 'undefined') {
+    marked.setOptions({
+        breaks: true, // Render /n as <br>
+        gfm: true
+    });
+}
+
 // Basic Emoji Map for common shortcodes
 function parseEmojis(text) {
     if (!text) return text;
     var map = {
         ':smile:': '😄', ':smiley:': '😃', ':grin:': '😁', ':joy:': '😂', ':wink:': '😉',
-        ':thumbsup:': '👍', ':thumbsdown:': '👎', ':ok_hand:': '👌', ':clap:': '👏',
+        ':thumbsup:': '👍', ':plus1:': '👍', ':thumbsdown:': '👎', '-1': '👎', ':ok_hand:': '👌', ':clap:': '👏',
         ':tada:': '🎉', ':rocket:': '🚀', ':bulb:': '💡', ':memo:': '📝', ':mailbox_with_mail:': '📬',
         ':warning:': '⚠️', ':exclamation:': '❗', ':question:': '❓', ':stop_sign:': '🛑',
-        ':white_check_mark:': '✅', ':ballot_box_with_check:': '☑️', ':x:': '❌',
+        ':white_check_mark:': '✅', ':check:': '✅', ':ballot_box_with_check:': '☑️', ':x:': '❌',
         ':heart:': '❤️', ':star:': '⭐', ':fire:': '🔥', ':poop:': '💩', ':eyes:': '👀',
-        ':sunglasses:': '😎', ':cry:': '😢', ':sob:': '😭', ':thinking_face:': '🤔'
+        ':sunglasses:': '😎', ':cry:': '😢', ':sob:': '😭', ':thinking_face:': '🤔',
+        ':pensive:': '😔', ':confused:': '😕', ':neutral_face:': '😐', ':open_mouth:': '😮',
+        ':scream:': '😱', ':anger:': '💢', ':muscle:': '💪', ':wave:': '👋'
     };
     return text.replace(/:[a-z0-9_]+:/g, function (match) {
-        return map[match] || match;
+        // If found, return emoji. If not found, return empty string to remove code.
+        return map[match] || '';
     });
 }
 
