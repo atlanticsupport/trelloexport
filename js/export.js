@@ -312,6 +312,13 @@ window.generatePrintView = function () {
     // Inject specialized CSS for this view
     var printStyles = `
     <style>
+        /* Force scrolling on the main page/body */
+        html, body {
+            overflow-y: auto !important;
+            height: auto !important;
+            min-height: 100% !important;
+        }
+
         /* Force light theme for this container regardless of global CSS */
         #print-view {
             background-color: white !important;
@@ -320,7 +327,7 @@ window.generatePrintView = function () {
             padding: 40px;
             max-width: 210mm; /* A4 width */
             margin: 0 auto;
-            min-height: 100vh;
+            position: relative;
         }
 
         .print-controls {
@@ -329,6 +336,10 @@ window.generatePrintView = function () {
             margin-bottom: 40px; 
             padding-bottom: 20px; 
             border-bottom: 1px solid #ccc;
+            position: sticky;
+            top: 0;
+            background: white;
+            z-index: 100;
         }
 
         .doc-title {
@@ -396,11 +407,11 @@ window.generatePrintView = function () {
         .print-desc blockquote { border-left: 3px solid #000; padding-left: 10px; margin-left: 0; font-style: italic; }
 
         @media print {
-            body { background-color: white !important; margin: 0; padding: 0; }
+            body { background-color: white !important; margin: 0; padding: 0; overflow: visible !important; }
             .container, #config-section, #preview-section, header { display: none !important; }
-            #print-view { display: block !important; padding: 0 !important; margin: 0 !important; width: 100%; max-width: none; }
+            #print-view { display: block !important; padding: 0 !important; margin: 0 !important; width: 100%; max-width: none; min-height: 0 !important; }
             .print-controls { display: none !important; }
-            .print-card { page-break-inside: avoid; }
+            .print-card { page-break-inside: avoid; border-bottom: 1px solid #000; }
             a { text-decoration: none; color: black !important; }
         }
     </style>
