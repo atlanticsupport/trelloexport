@@ -308,6 +308,20 @@ function parseEmojis(text) {
     });
 }
 
+// Helper to determine icon based on List Name
+function getCategoryIcon(name) {
+    name = name.toLowerCase();
+    if (name.includes('todo') || name.includes('tudu') || name.includes('fazer') || name.includes('backlog')) return '📋';
+    if (name.includes('doing') || name.includes('fazendo') || name.includes('progresso') || name.includes('andamento')) return '🏃';
+    if (name.includes('done') || name.includes('feito') || name.includes('conclui') || name.includes('termina') || name.includes('complete')) return '✅';
+    if (name.includes('bug') || name.includes('erro') || name.includes('issue')) return '🐞';
+    if (name.includes('idea') || name.includes('ideia') || name.includes('sugest')) return '💡';
+    if (name.includes('review') || name.includes('revis') || name.includes('qa')) return '👀';
+    if (name.includes('meeting') || name.includes('reuniao')) return '📅';
+    if (name.includes('info') || name.includes('doc') || name.includes('geral')) return 'ℹ️';
+    return '📂'; // Default folder
+}
+
 window.generatePrintView = function () {
     if (exportData.length === 0) return;
 
@@ -319,6 +333,14 @@ window.generatePrintView = function () {
     previewSection.classList.add('hidden');
     if (header) header.classList.add('hidden');
     printView.classList.remove('hidden');
+
+    // Group Data by List
+    var groupedData = {};
+    exportData.forEach(function (row) {
+        var listName = row['Lista'] || 'Outros';
+        if (!groupedData[listName]) groupedData[listName] = [];
+        groupedData[listName].push(row);
+    });
 
     // Inject specialized CSS for this view
     var printStyles = `
@@ -351,6 +373,7 @@ window.generatePrintView = function () {
             top: 0;
             background: white;
             z-index: 100;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05); /* subtle shadow for floating header */
         }
 
         .doc-title {
@@ -368,16 +391,72 @@ window.generatePrintView = function () {
             margin-bottom: 40px;
         }
 
-        .print-card {
-            margin-bottom: 30px;
-            padding-bottom: 30px;
-            border-bottom: 2px solid #000; /* Clear thick separator */
+        /* Tree View Styles using Details/Summary */
+        details {
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            overflow: hidden;
             page-break-inside: avoid;
         }
 
-        .print-card h2 {
+        details[open] {
+            border-bottom: none; /* Let children render border */
+        }
+
+        summary {
+            background-color: #f8f9fa;
+            padding: 12px 15px;
+            font-weight: bold;
+            cursor: pointer;
+            list-style: none; /* Hide default arrow to custom style */
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            align-items: center;
+            font-size: 16px;
+        }
+        
+        summary::-webkit-details-marker {
+            display: none;
+        }
+
+        summary:after {
+            content: '+'; 
+            font-weight: bold;
+            margin-left: auto;
             font-size: 18px;
-            margin: 0 0 10px 0;
+        }
+
+        details[open] summary:after {
+            content: '-';
+        }
+
+        details[open] summary {
+            margin-bottom: 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .category-content {
+            padding: 15px;
+            background: #fff;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .print-card {
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px dashed #ccc;
+            page-break-inside: avoid;
+        }
+        .print-card:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .print-card h2 {
+            font-size: 16px;
+            margin: 0 0 8px 0;
             font-weight: bold;
             color: black;
         }
@@ -388,17 +467,18 @@ window.generatePrintView = function () {
             gap: 15px;
             font-size: 11px;
             color: #333;
-            margin-bottom: 15px;
-            font-family: monospace; /* Technical look */
+            margin-bottom: 10px;
+            font-family: monospace; 
             text-transform: uppercase;
         }
 
         .print-label {
             border: 1px solid #000;
-            padding: 2px 6px;
-            border-radius: 4px;
+            padding: 1px 5px;
+            border-radius: 3px;
             font-weight: bold;
             font-size: 10px;
+            margin-right: 4px;
         }
 
         .print-desc {
@@ -410,11 +490,11 @@ window.generatePrintView = function () {
 
         .print-desc img {
             max-width: 100%;
-            filter: grayscale(100%); /* Force B&W images for clean printing */
+            filter: grayscale(100%); 
         }
         
-        .print-desc h1 { font-size: 16px; border-bottom: 1px solid #ccc; }
-        .print-desc h2 { font-size: 14px; font-weight: bold; }
+        .print-desc h1 { font-size: 14px; border-bottom: 1px solid #eee; }
+        .print-desc h2 { font-size: 13px; font-weight: bold; }
         .print-desc blockquote { border-left: 3px solid #000; padding-left: 10px; margin-left: 0; font-style: italic; }
 
         @media print {
@@ -422,7 +502,10 @@ window.generatePrintView = function () {
             .container, #config-section, #preview-section, header { display: none !important; }
             #print-view { display: block !important; padding: 0 !important; margin: 0 !important; width: 100%; max-width: none; min-height: 0 !important; }
             .print-controls { display: none !important; }
-            .print-card { page-break-inside: avoid; border-bottom: 1px solid #000; }
+            summary:after { display: none; } /* Hide toggle in print */
+            details { border: none !important; margin-bottom: 30px; }
+            summary { background: none !important; padding: 0 !important; border-bottom: 2px solid #000 !important; font-size: 20px !important; margin-bottom: 15px !important; }
+            .print-card { border-bottom: 1px solid #000; padding-bottom: 15px; margin-bottom: 15px; }
             a { text-decoration: none; color: black !important; }
         }
     </style>
@@ -438,38 +521,49 @@ window.generatePrintView = function () {
     <div class="doc-meta">Gerado em ${new Date().toLocaleString()} | Total: ${exportData.length} cartões</div>
     `;
 
-    exportData.forEach(function (row) {
-        // Parse emojis in name and description
-        var safeName = parseEmojis(row['Nome'] || 'Sem Nome');
-        var safeDesc = parseEmojis(row['Descrição'] || '');
-
-        // Render Markdown
-        var descHtml = safeDesc ? (typeof marked !== 'undefined' ? marked.parse(safeDesc) : safeDesc) : '<span style="color:#999; font-style:italic">Sem descrição</span>';
+    // Render Groups
+    Object.keys(groupedData).forEach(function (listName) {
+        var items = groupedData[listName];
+        var icon = getCategoryIcon(listName);
 
         contentHtml += `
-        <div class="print-card">
-            <h2>${safeName}</h2>
-            
-            <div class="print-meta-row">
-                ${row['Lista'] ? `<span>📂 ${row['Lista']}</span>` : ''}
-                ${row['Membros'] ? `<span>👤 ${row['Membros']}</span>` : ''}
-                ${row['Entrega'] ? `<span>📅 ${row['Entrega']}</span>` : ''}
-            </div>
+        <details open>
+            <summary>${icon} &nbsp; ${listName} (${items.length})</summary>
+            <div class="category-content">`;
 
-            ${row['Etiquetas'] ? `
-            <div style="margin-bottom: 10px;">
-                ${row['Etiquetas'].split(', ').map(l => `<span class="print-label">${l}</span>`).join(' ')}
-            </div>` : ''}
+        items.forEach(function (row) {
+            // Parse emojis
+            var safeName = parseEmojis(row['Nome'] || 'Sem Nome');
+            var safeDesc = parseEmojis(row['Descrição'] || '');
+            var descHtml = safeDesc ? (typeof marked !== 'undefined' ? marked.parse(safeDesc) : safeDesc) : '<span style="color:#999; font-style:italic">Sem descrição</span>';
 
-            <div class="print-desc">
-                ${descHtml}
+            contentHtml += `
+                <div class="print-card">
+                    <h2>${safeName}</h2>
+                    
+                    <div class="print-meta-row">
+                        ${row['Membros'] ? `<span>👤 ${row['Membros']}</span>` : ''}
+                        ${row['Entrega'] ? `<span>📅 ${row['Entrega']}</span>` : ''}
+                    </div>
+
+                    ${row['Etiquetas'] ? `
+                    <div style="margin-bottom: 8px;">
+                        ${row['Etiquetas'].split(', ').map(l => `<span class="print-label">${l}</span>`).join(' ')}
+                    </div>` : ''}
+
+                    <div class="print-desc">
+                        ${descHtml}
+                    </div>
+                </div>`;
+        });
+
+        contentHtml += `
             </div>
-        </div>`;
+        </details>`;
     });
 
     printView.innerHTML = contentHtml;
 
-    // Explicitly set light background on body to override dark mode during this view
     document.body.style.backgroundColor = 'white';
     document.body.style.color = 'black';
 
